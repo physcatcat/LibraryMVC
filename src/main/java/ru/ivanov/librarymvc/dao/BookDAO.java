@@ -5,16 +5,20 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.ivanov.librarymvc.models.Book;
+import ru.ivanov.librarymvc.models.Person;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class BookDAO {
     private final JdbcTemplate jdbcTemplate;
+    private final PersonMapper personMapper;
 
     @Autowired
-    public BookDAO(JdbcTemplate jdbcTemplate) {
+    public BookDAO(JdbcTemplate jdbcTemplate, PersonMapper personMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.personMapper = personMapper;
     }
 
     public List<Book> index() {
@@ -31,7 +35,7 @@ public class BookDAO {
     public void save(Book book) {
         jdbcTemplate.update("insert into book(title, author, year) values(?, ?, ?)",
                 book.getTitle(),
-                book.getAuthor(), //TODO:названия в классе и в таблице Book не сходятся (проблема в BeanPropertyRowMapper)
+                book.getAuthor(),
                 book.getYear()
         );
     }
@@ -47,5 +51,25 @@ public class BookDAO {
 
     public void delete(int id) {
         jdbcTemplate.update("delete from book where id=?", id);
+    }
+
+    public Optional<Person> getBookOwner(int bookId) {
+        return jdbcTemplate.query(
+                """
+                            select * from person p
+                                inner join book b on b.person_id = p.id
+                            where b.id = ?
+                        """,
+                personMapper,
+                bookId
+        ).stream().findAny();
+    }
+
+    public void assign(int id, Person person) {
+        jdbcTemplate.update("update book set person_id = ? where id = ?", person.getId(), id);
+    }
+
+    public void release(int id) {
+        jdbcTemplate.update("update book set person_id = null where id = ?", id);
     }
 }

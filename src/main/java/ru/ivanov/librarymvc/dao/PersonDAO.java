@@ -1,8 +1,10 @@
 package ru.ivanov.librarymvc.dao;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import ru.ivanov.librarymvc.models.Book;
 import ru.ivanov.librarymvc.models.Person;
 
 import java.time.LocalDate;
@@ -28,7 +30,7 @@ public class PersonDAO {
     public void update(int id, Person person) {
         jdbcTemplate.update("update person set full_name=?, date_of_birth=?, email=?, phone_number=? where id=?",
                 person.getName(),
-                LocalDate.parse(person.getBirthDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy")), //person.getBirthDate()
+                LocalDate.parse(person.getBirthDate(), DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 person.getEmail(),
                 person.getPhoneNumber(),
                 id
@@ -65,5 +67,9 @@ public class PersonDAO {
 
     public List<Person> index() {
         return jdbcTemplate.query("select * from person", personMapper);
+    }
+
+    public List<Book> getBooksByPerson(int personId) {
+        return jdbcTemplate.query("select * from book where person_id = ?", new BeanPropertyRowMapper<>(Book.class), personId);
     }
 }
